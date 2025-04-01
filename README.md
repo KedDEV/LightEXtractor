@@ -9,11 +9,6 @@ Ferramenta de extração de arquivos compactados (.rar, .zip, .7z) com suporte p
 - Blacklist de arquivos indesejados
 - Extração recursiva
 
-## ⚙️ Pré-requisitos
-- Windows (com suporte experimental para outros SOs com modificações)
-- [UnRAR](https://www.rarlab.com/rar/unrarw64.exe) instalado e no PATH
-- [7-Zip](https://www.7-zip.org/download.html) instalado e no PATH
-
 # Como Adicionar UnRAR e 7-Zip ao PATH do Windows
 
 Para que o LightEXtractorDEMO funcione corretamente, você precisa adicionar os executáveis do UnRAR e 7-Zip ao PATH do seu sistema. Siga estes passos:
