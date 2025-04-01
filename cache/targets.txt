@@ -1,14 +1,16 @@
-extraction_foldernames="Fotos", "fotos", "Documentos", "documentos"
-extraction_filenames="*.zip", "*.rar", "*.7z"
+extraction_foldernames="*cookie*", "Fotos", "fotos", "Documentos", "documentos"
+extraction_filenames="*.txt", "*.zip", "*.rar", "*.7z"
 
 #######################################################################################################################################
-# SÓ É NECESSÁRIO DEFINIR PASTAS QUANDO FOR USAR ALGUM FORMATO DIFERENTE DO .RAR, O .RAR PROCURA O ARQUIVO INDEPENDENTE DO NOME DA PASTA
-# extraction_foldernames são as pastas que o LightEXtractor vai extrair junto com todo o conteúdo dentro dela, recomendo
-# colocar em maiúsculo e em minúsculo porque não foi testado se existe algum problema com capitalização.
+# S� � NECESS�RIO DEFINIR PASTAS QUANDO FOR USAR ALGUM FORMATO DIFERENTE DO .RAR, O .RAR PROCURA O ARQUIVO INDEPENDENTE DO NOME DA PASTA
+# extraction_foldernames s�o as pastas que o LightEXtractor vai extrair junto com todo o conte�do dentro dela, recomendo
+# colocar em mai�sculo e em min�sculo porque n�o foi testado se existe algum problema com capitaliza��o.
 # Exemplo de extraction foldernames:
-# extraction_foldernames="Fotos", "fotos", "Documentos", "documentos", "Downloads", "downloads"
+# example_extraction_foldernames="Fotos", "fotos", "Documentos", "documentos", "Downloads", "downloads"
 #
-# extraction_filenames são os arquivos que o LightEXtractor vai extrair, para extrair tudo, basta deixar "*.*"
+# extraction_filenames s�o os arquivos que o LightEXtractor vai extrair, para extrair tudo, basta deixar "*.*"
 # Exemplo de extraction_filenames
-# extraction_filenames ="*2024*.txt", "*2025*.txt", "*evento*.txt", "*Evento*.txt", "*.zip", "*.rar", "*.7z", "*.pdf"
+# example_extraction_filenames ="*2024*.txt", "*2025*.txt", "*evento*.txt", "*Evento*.txt", "*.zip", "*.rar", "*.7z", "*.pdf"
+#
+# Se precisar refazer esse arquivo, delete o mesmo e inicie o programa que ele ir� criar um automaticamente.
 #######################################################################################################################################

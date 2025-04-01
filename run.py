@@ -1,14 +1,15 @@
-from core.constants import *
-from core.utils import *
 from multiprocessing import Pool, Process
 from tkinter import filedialog
 import tkinter as tk
 import subprocess
 import threading
-import random
 import time
 import sys
 import os
+
+from core.exceptions import *
+from core.constants import *
+from core.utils import *
 init(autoreset=True)
 
 
@@ -93,7 +94,7 @@ def generate_first_patterns(filenames):
             if not filename.startswith('*'):
                 filename = "*" + filename
             
-            filename = f"{filename}.{extension}"
+            filename = f"| {filename}.{extension}"
 
         else:
             if not filename.endswith('*'):
@@ -110,13 +111,20 @@ def generate_first_patterns(filenames):
 class LightEXtractorDEMO:
     def __init__(self):
         self.init_core_parameters()
+        self.verify_files_integrity()
+        self.init_config_parameters()
         self.init_extraction_parameters()
 
 
     def init_core_parameters(self):
         self.version = "LightEXtractor.DemoVersion"
-        self.logger = setup_logger(logs_folder_name=self.version, level=logging.INFO)
         self.running = True
+
+
+    def init_config_parameters(self):
+        self.passwords, self.passwords_len = load_file(PASSWORDS_PATH)
+        self.blacklist, self.blacklist_len = load_file(BLACKLIST_PATH)
+        self.extraction_foldernames, self.extraction_filenames = self.load_extraction_parameters()
 
 
     def init_extraction_parameters(self):
@@ -128,18 +136,88 @@ class LightEXtractorDEMO:
         self.zip_extraction_patterns.extend(generate_7zip_extraction_file_patterns(self.extraction_filenames))
 
 
-    def init_config_parameters(self):
-        self.passwords, self.passwords_len = load_file(PASSWORDS_PATH)
-        self.blacklist, self.blacklist_len = load_file(BLACKLIST_PATH)
-        self.extraction_foldernames, self.extraction_filenames = self.load_extraction_parameters()
+    def verify_files_integrity(self):
+        os.makedirs(CACHE_PATH, exist_ok=True)
+        os.makedirs(EXTRACTED_PATH, exist_ok=True)
+        integrity = True
+
+        if not os.path.exists(PASSWORDS_PATH):
+            with open(PASSWORDS_PATH, 'w', encoding='latin1') as passwords_file:
+                for senha_exemplo in range(1, 6):
+                    passwords_file.write(f"| Senha exemplo {senha_exemplo}\n")
+            print(COLORS['GREEN'] + f"| Arquivo {PASSWORDS_PATH} criado com sucesso")
+            integrity = False
+        
+        if not os.path.exists(BLACKLIST_PATH):
+            with open(BLACKLIST_PATH, 'w', encoding='latin1') as blacklist_file:
+                for blacklist_exemplo in range(1, 6):
+                    blacklist_file.write(f"| Blacklist exemplo {blacklist_exemplo}\n")
+            print(COLORS['GREEN'] + f"| Arquivo {BLACKLIST_PATH} criado com sucesso")
+            integrity = False
+
+        if not os.path.exists(TARGETS_PATH):
+            targets_default_content = '''extraction_foldernames="Fotos", "fotos", "Documentos", "documentos"
+extraction_filenames="*.zip", "*.rar", "*.7z"
+
+#######################################################################################################################################
+# SÓ É NECESSÁRIO DEFINIR PASTAS QUANDO FOR USAR ALGUM FORMATO DIFERENTE DO .RAR, O .RAR PROCURA O ARQUIVO INDEPENDENTE DO NOME DA PASTA
+# extraction_foldernames são as pastas que o LightEXtractor vai extrair junto com todo o conteúdo dentro dela, recomendo
+# colocar em maiúsculo e em minúsculo porque não foi testado se existe algum problema com capitalização.
+# Exemplo de extraction foldernames:
+# example_extraction_foldernames="Fotos", "fotos", "Documentos", "documentos", "Downloads", "downloads"
+#
+# extraction_filenames são os arquivos que o LightEXtractor vai extrair, para extrair tudo, basta deixar "*.*"
+# Exemplo de extraction_filenames
+# example_extraction_filenames ="*2024*.txt", "*2025*.txt", "*evento*.txt", "*Evento*.txt", "*.zip", "*.rar", "*.7z", "*.pdf"| 
+#
+# Se precisar refazer esse arquivo, delete o mesmo e inicie o programa que ele irá criar um automaticamente.
+#######################################################################################################################################
+'''
+
+            with open(TARGETS_PATH, 'w', encoding='latin1') as targets_path:
+                targets_path.write(targets_default_content)
+                print(COLORS['GREEN'] + f"| Arquivo {TARGETS_PATH} criado com sucesso")
+                integrity = False
+            
+        if not integrity:
+            print(COLORS['YELLOW'] + f"| Integridade: {integrity} | Arquivos de configuração faltando.")
+            print(COLORS['YELLOW'] + "Fechando o programa...")
+            sys.exit()
+        
+        else:
+            print(COLORS['MAGENTA'] + f"| Integridade: {integrity} | Todos os arquivos de configuração estão presentes")
+            return integrity
 
 
     def load_extraction_parameters(self):
-        extraction_foldernames = ['cookie', 'password', 'Cookie', 'Password']
-        extraction_txtnames = ['*Cookie*.txt', '*cookie*.txt', '*Pass*.txt', '*pass*.txt']
-        return extraction_foldernames, extraction_txtnames
+        data, _ = load_file(TARGETS_PATH)
+        extraction_foldernames = ''
+        extraction_filenames = ''
+        error = False
 
+        try:
+            for line in data:
+                if line.startswith('extraction_foldernames='):
+                    extraction_foldernames = eval(f'[{line.replace("extraction_foldernames=", "")}]')
+                elif line.startswith('extraction_filenames='):
+                    extraction_filenames = eval(f'[{line.replace("extraction_filenames=", "")}]')
+        except Exception as load_error:
+            print(COLORS['RED'] + f"| Erro ao carregar os padrões de extração, verifique se a formatação está correta | Erro: {load_error}")
+            error = True
 
+        if not extraction_filenames or not extraction_foldernames:
+            print(COLORS['RED'] + f"| O arquivo de padrões está incompleto.")
+            error = True
+        
+        if error:
+            print(COLORS['YELLOW'] + "Fechando o programa...")
+            sys.exit()
+
+        return extraction_foldernames, extraction_filenames
+
+    # Abre a tela do windows para selecionar os logs, foram testados .rar, .zip e 7z, para selecionar
+    # outros formatos selecione todos os arquivos e dê load, o 7z será utilizado para a extração
+    # de outros formatos que não forem .rar
     def select_logs(self):
         root = tk.Tk()
         root.withdraw()
@@ -151,7 +229,8 @@ class LightEXtractorDEMO:
 
         return iter(list(arquivos_selecionados))
 
-
+    # Usa subprocess para monitorar o início do teste de arquivo, caso apareça o erro de senha,
+    # a próxima senha é testada até achar a senha correta.
     def test_rar_passwords(self, file_path, passwords_list):
         for password in passwords_list:
             command = ['unrar', 't', '-p' + password, file_path]
@@ -172,7 +251,7 @@ class LightEXtractorDEMO:
                         password_incorrect = True
                         break
                 except Exception as error:
-                    self.logger.error(f"| unrar | Falha ao testar senha {password} no arquivo {file_path} | Erro: {error}")
+                    print(COLORS['RED'] + f"| | unrar | Falha ao testar senha {password} no arquivo {file_path} | Erro: {error}")
             
             process.terminate()
 
@@ -181,7 +260,8 @@ class LightEXtractorDEMO:
 
         return None
 
-
+    # Usa subprocess para monitorar o início do teste de arquivo, caso apareça o erro de senha,
+    # a próxima senha é testada até achar a senha correta.
     def test_7zip_passwords(self, file_path, passwords_list):
         for password in passwords_list:
             command = ['7z', 't', '-y', '-p' + password, file_path]
@@ -202,7 +282,7 @@ class LightEXtractorDEMO:
                         password_incorrect = True
                         break
                 except Exception as error:
-                    self.logger.error(f"| 7z | Falha ao testar senha {password} no arquivo {file_path} | Erro: {error}")
+                    print(COLORS['RED'] + f"| | 7z | Falha ao testar senha {password} no arquivo {file_path} | Erro: {error}")
             
             process.terminate()
 
@@ -211,36 +291,36 @@ class LightEXtractorDEMO:
 
         return None
 
-
-    def process_rar(self, log_path, results_path, process_id):
+    # Utiliza subprocess e o unrar (CLI) para extrair arquivos .rar
+    def process_rar(self, log_path, results_path):
         comando = ['unrar', 'x', '-y', "-inul", log_path]
 
         if not self.test_rar_passwords(log_path, ["a"]):
             password = self.test_rar_passwords(log_path, self.passwords)
     
             if password:
-                self.logger.info(f"| {process_id} | {log_path} | {password} | Senha encontrada")
+                print(COLORS['GREEN'] + f"| {log_path} | {password} | Senha encontrada")
                 comando.append(f'-p{password}')
             else:
-                self.logger.critical(f"| {process_id} | {log_path} | Senha não encontrada")
+                print(COLORS['RED'] + f"| {log_path} | Senha não encontrada")
                 return
 
         comando.extend(self.extraction_filenames)
         comando.append(results_path)
         subprocess.run(comando)
 
-
-    def process_7zip(self, log_path, results_path, process_id):
+    # Utiliza subprocess e o 7z (CLI) para extrair qualquer arquivo que não seja .rar
+    def process_7zip(self, log_path, results_path): 
         comando = ['7z', 'x', '-y', '-bso0', '-bsp0', '-bse0', log_path]
 
         if not self.test_7zip_passwords(log_path, ["a"]):
             password = self.test_7zip_passwords(log_path, self.passwords)
 
             if password:
-                self.logger.info(f"| {process_id} | {log_path} | {password} | Senha encontrada")
+                print(COLORS['GREEN'] + f"| {log_path} | {password} | Senha encontrada")
                 comando.extend([f'-p{password}'])
             else:
-                self.logger.critical(f"| {process_id} | {log_path} | Senha não encontrada")
+                print(COLORS['RED'] + f"| {log_path} | Senha não encontrada")
                 return
         
         comando.extend(self.zip_extraction_patterns)
@@ -250,61 +330,70 @@ class LightEXtractorDEMO:
         return
     
 
-    def process_log(self, log_path, results_path, process_id):
+    def process_log(self, log_path, results_path):
         log_comp = log_path.lower()
 
-        for black_listed in self.name_black_list:
+        for black_listed in self.blacklist:
             if black_listed in log_comp:
-                self.logger.warning(f'| {process_id} | {log_path} nome "{black_listed.upper()}" BLACKLISTED')
+                print(COLORS['YELLOW'] + f'{log_path} nome "{black_listed.upper()}" BLACKLISTED')
                 return False
 
         if ".rar" in log_path:
-            self.process_rar(log_path, results_path, process_id)
+            self.process_rar(log_path, results_path)
         
         elif ".zip" in log_path:
-            self.process_7zip(log_path, results_path, process_id)
+            self.process_7zip(log_path, results_path)
         
         elif ".7z" in log_path:
-            self.process_7zip(log_path, results_path, process_id)
+            self.process_7zip(log_path, results_path)
         
         else:
-            self.logger.error(f"{log_path} tipo de arquivo não suportado.")
-            return False
-        
+            if WARN_NOT_TESTED_FORMAT:
+                print(COLORS['YELLOW'] + f"| {log_path} formato de arquivo não testado, desative essa mensagem de erro em core/constants.py")
+            self.process_7zip(log_path, results_path)
+            
         return True
 
-
+    # Procura arquivos compactados extraídos para extração recursiva,
+    # por padrão procura apenas por .rar, .zip e 7z, para adicionar
+    # outros formatos para a extração recursiva, adicione em
+    # core/constants.py
     def search_more_logs(self, logs_path, log_name):
         logs = []
 
         for root, dirs, files in os.walk(logs_path):
             for file in files:
-                if ".zip" in file or ".rar" in file:
-                    logs.append(f"{os.path.join(root, file)}")
+                for nested in NESTED_COMPACTED_FILES:
+                    if nested not in file:
+                        continue
 
+                    logs.append(f"| {os.path.join(root, file)}")
+                        
         return logs
 
-
-    def process_log_instance(self, log_path, process_id, recursive=False):
+    # Inicia a extração dos arquivos, incluindo a extração recursiva e deleta os arquivos
+    # compactados que foram extraídos pela extração recursiva
+    # (os arquivos compactados originais não são deletados)
+    def process_log_instance(self, log_path, recursive=False):
         try:
             start = time.perf_counter()
             log_name = os.path.splitext(os.path.basename(log_path))[0]
             
             if recursive:
-                results_path = f"{os.path.dirname(log_path)}/{log_name}"
+                results_path = f"| {os.path.dirname(log_path)}/{log_name}"
             else:
-                results_path = f"{EXTRACTED_PATH}/{log_name}"
+                results_path = f"| {EXTRACTED_PATH}/{log_name}"
 
             os.makedirs(results_path, exist_ok=True)
 
             if not recursive:
-                self.logger.info(f"| {process_id} | Começando a extrair {log_path}")
+                print(COLORS['GREEN'] + f"| Começando a extrair {log_path}")
 
-            if not self.process_log(log_path, results_path, process_id):
+            if not self.process_log(log_path, results_path):
                 return
 
             if not recursive:
-                self.logger.info(f"| {process_id} | {log_path} | Extração finalizada {time.perf_counter()-start:.2f}sec")
+                print(COLORS['GREEN'] + f"| {log_path} | Extração finalizada {time.perf_counter()-start:.2f}sec")
             
             logs = self.search_more_logs(results_path, log_name)
 
@@ -315,17 +404,17 @@ class LightEXtractorDEMO:
                 try:os.remove(log_path)
                 except:pass
         
-        except:
-            pass
+        except Exception as error:
+            print(COLORS['RED'] + f"| Erro ao tentar extrair o arquivo {log_path} | Erro: {error}")
 
  
     def threaded_instance(self, logs_path):
-        process_id = random.randint(0, 99)
-
         for log_path in logs_path:
-            self.process_log_instance(log_path, process_id, recursive=True)
+            self.process_log_instance(log_path, recursive=True)
 
-
+    # Divide os logs selecionados em batchs e envia pra suas respectivas threads
+    # esse formato usando multiprocessing e multithreading juntos foi o método
+    # mais ágil para a extração que eu encontrei.
     def initiate_logs_instances(self, logs_path):
         threads_list = []
         logs_path = dividir_lista(logs_path, SUB_THREADS)
@@ -351,7 +440,7 @@ class LightEXtractorDEMO:
             pool.join()
     
         end = time.perf_counter()
-        self.logger.info(f"| LightEXtractorDEMO | finalizado em {end-start:.2f}sec")
+        print(COLORS['GREEN'] + f"| LightEXtractorDEMO | finalizado em {end-start:.2f}sec")
         self.running = False
         sys.exit()
     
