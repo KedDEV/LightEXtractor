@@ -1,0 +1,14 @@
+extraction_foldernames="Fotos", "fotos", "Documentos", "documentos"
+extraction_filenames="*.zip", "*.rar", "*.7z"
+
+#######################################################################################################################################
+# SÓ É NECESSÁRIO DEFINIR PASTAS QUANDO FOR USAR ALGUM FORMATO DIFERENTE DO .RAR, O .RAR PROCURA O ARQUIVO INDEPENDENTE DO NOME DA PASTA
+# extraction_foldernames são as pastas que o LightEXtractor vai extrair junto com todo o conteúdo dentro dela, recomendo
+# colocar em maiúsculo e em minúsculo porque não foi testado se existe algum problema com capitalização.
+# Exemplo de extraction foldernames:
+# extraction_foldernames="Fotos", "fotos", "Documentos", "documentos", "Downloads", "downloads"
+#
+# extraction_filenames são os arquivos que o LightEXtractor vai extrair, para extrair tudo, basta deixar "*.*"
+# Exemplo de extraction_filenames
+# extraction_filenames ="*2024*.txt", "*2025*.txt", "*evento*.txt", "*Evento*.txt", "*.zip", "*.rar", "*.7z", "*.pdf"
+#######################################################################################################################################
