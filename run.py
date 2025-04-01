@@ -380,9 +380,9 @@ extraction_filenames="*.zip", "*.rar", "*.7z"
             log_name = os.path.splitext(os.path.basename(log_path))[0]
             
             if recursive:
-                results_path = f"| {os.path.dirname(log_path)}/{log_name}"
+                results_path = f"{os.path.dirname(log_path)}/{log_name}"
             else:
-                results_path = f"| {EXTRACTED_PATH}/{log_name}"
+                results_path = f"{EXTRACTED_PATH}/{log_name}"
 
             os.makedirs(results_path, exist_ok=True)
 
