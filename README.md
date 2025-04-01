@@ -53,6 +53,7 @@ Se aparecer a ajuda dos programas, a configuração foi bem-sucedida!
 
 💡 Dica: Pode ser necessário reiniciar o terminal ou o computador após essas alterações.
 
+# Instale as dependências do projeto
 ```bash
 pip install -r requirements.txt
 ```
