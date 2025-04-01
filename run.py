@@ -181,7 +181,7 @@ extraction_filenames="*.zip", "*.rar", "*.7z"
             
         if not integrity:
             print(COLORS['YELLOW'] + f"| Integridade: {integrity} | Arquivos de configuração faltando.")
-            print(COLORS['YELLOW'] + "Fechando o programa...")
+            print(COLORS['YELLOW'] + "| Fechando o programa...")
             sys.exit()
         
         else:
@@ -210,7 +210,7 @@ extraction_filenames="*.zip", "*.rar", "*.7z"
             error = True
         
         if error:
-            print(COLORS['YELLOW'] + "Fechando o programa...")
+            print(COLORS['YELLOW'] + "| Fechando o programa...")
             sys.exit()
 
         return extraction_foldernames, extraction_filenames
